@@ -14,7 +14,7 @@ Format: match1|||match2
 
 export const identifyImageWithGemini = async (base64Image: string): Promise<string | null> => {
   if (!process.env.API_KEY) {
-    console.warn("Gemini API Key is missing. Falling back to mock.");
+    console.error("Gemini API Key is missing.");
     return null;
   }
 

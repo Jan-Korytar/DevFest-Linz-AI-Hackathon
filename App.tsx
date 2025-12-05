@@ -5,6 +5,7 @@ import ResultCard from './components/ResultCard';
 import AmbiguityCard from './components/AmbiguityCard';
 import ScanningLoader from './components/ScanningLoader';
 import Footer from './components/Footer';
+import InfoModal from './components/InfoModal';
 import { CityKey, AnalysisResult } from './types';
 import { findBinForItem, processImage } from './services/recyclingService';
 import { CITY_RULES } from './constants';
@@ -17,6 +18,9 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('idle');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [lastQuery, setLastQuery] = useState<string>('');
+  
+  // Info Modal State
+  const [infoModal, setInfoModal] = useState<{ title: string; content: React.ReactNode } | null>(null);
 
   const handleCityChange = async (city: CityKey) => {
     setCurrentCity(city);
@@ -87,6 +91,58 @@ const App: React.FC = () => {
     setLastQuery('');
   };
 
+  // Modal Handlers
+  const closeInfoModal = () => setInfoModal(null);
+
+  const openAbout = () => setInfoModal({
+    title: "About RecycleAT",
+    content: (
+      <div className="space-y-4">
+        <p>RecycleAT is an AI-powered recycling assistant designed specifically for Austrian cities.</p>
+        <p>Our goal is to make recycling easier and more accurate for everyone, helping to reduce waste and protect our environment.</p>
+        <p className="text-xs text-gray-400 mt-4">Version 1.1.0 (Austria Edition)</p>
+      </div>
+    )
+  });
+
+  const openHowItWorks = () => setInfoModal({
+    title: "How it works",
+    content: (
+      <div className="space-y-4">
+        <p>We use the official waste management rules provided by each supported city (Vienna, Graz, Linz, Salzburg) to ensure accuracy.</p>
+        <h3 className="font-semibold text-gray-800 pt-2">Our process:</h3>
+        <ol className="list-decimal pl-5 space-y-2">
+           <li><strong>Identify:</strong> When you search for an item or upload a photo, we use advanced AI (Google Gemini) to identify exactly what the object is.</li>
+           <li><strong>Match:</strong> We then match the identified item against the official city recycling rules for your specific location.</li>
+           <li><strong>Sort:</strong> We tell you exactly which bin to use based on local regulations.</li>
+        </ol>
+      </div>
+    )
+  });
+
+  const openPrivacy = () => setInfoModal({
+    title: "Privacy Policy",
+    content: (
+      <div className="space-y-4">
+        <p>We take your privacy seriously and believe in transparency.</p>
+        <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+          <div>
+            <h4 className="font-semibold text-eco-primary mb-1">No Data Collection</h4>
+            <p>We do not collect, store, or share any personal user data. Your usage of this app is completely anonymous.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-eco-primary mb-1">Anonymized Processing</h4>
+            <p>Your search queries and uploaded images are used strictly for identifying waste items. We send anonymized queries to Google Gemini models to provide the service.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-eco-primary mb-1">No Storage</h4>
+            <p>Data is processed in real-time for the duration of your session and is not retained on our servers.</p>
+          </div>
+        </div>
+      </div>
+    )
+  });
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800 bg-[#F9F9F7] transition-colors duration-500">
       <Header currentCity={currentCity} onCityChange={handleCityChange} />
@@ -139,7 +195,19 @@ const App: React.FC = () => {
 
       </main>
 
-      <Footer />
+      <Footer 
+        onOpenAbout={openAbout}
+        onOpenHowItWorks={openHowItWorks}
+        onOpenPrivacy={openPrivacy}
+      />
+
+      <InfoModal 
+        isOpen={!!infoModal} 
+        onClose={closeInfoModal} 
+        title={infoModal?.title || ""}
+      >
+        {infoModal?.content}
+      </InfoModal>
     </div>
   );
 };
