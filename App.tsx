@@ -18,11 +18,12 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [lastQuery, setLastQuery] = useState<string>('');
 
-  const handleCityChange = (city: CityKey) => {
+  const handleCityChange = async (city: CityKey) => {
     setCurrentCity(city);
     // If we have a result, re-evaluate it for the new city
     if (appState === 'result' && lastQuery) {
-      const newResult = findBinForItem(city, lastQuery);
+      setAppState('scanning'); // Brief scan state for UX
+      const newResult = await findBinForItem(city, lastQuery);
       handleAnalysisResult(newResult, lastQuery);
     }
   };
@@ -45,16 +46,19 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSearch = (query: string, cityOverride?: CityKey) => {
+  const handleSearch = async (query: string, cityOverride?: CityKey) => {
     const cityToUse = cityOverride || currentCity;
     setLastQuery(query);
     setAppState('scanning');
 
-    // Simulate a small "thinking" delay even for text for better UX flow
-    setTimeout(() => {
-      const foundResult = findBinForItem(cityToUse, query);
+    try {
+      // Async search (now uses Gemini if needed)
+      const foundResult = await findBinForItem(cityToUse, query);
       handleAnalysisResult(foundResult, query);
-    }, 600);
+    } catch (error) {
+      console.error("Search error:", error);
+      setAppState('not-found');
+    }
   };
 
   const handleImageUpload = async (file: File) => {

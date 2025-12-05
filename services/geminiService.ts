@@ -1,5 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 
+// Prompts are defined here for easy editing
+const IMAGE_PROMPT = "Identify the main waste item in this image. Return ONLY the name of the item (e.g., 'plastic bottle', 'banana peel', 'newspaper'). Keep it simple and generic enough to match recycling categories.";
+
+const MATCHING_SYSTEM_INSTRUCTION = `
+Task: Match user input to closest waste category from the provided list.
+Rules:
+1. Closest semantic match.
+2. If ambiguous/multiple fit, return top 4.
+3. If no match, return "null".
+Format: match1|||match2
+`;
+
 export const identifyImageWithGemini = async (base64Image: string): Promise<string | null> => {
   if (!process.env.API_KEY) {
     console.warn("Gemini API Key is missing. Falling back to mock.");
@@ -15,7 +27,7 @@ export const identifyImageWithGemini = async (base64Image: string): Promise<stri
       : base64Image;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-lite-latest',
       contents: {
         parts: [
           {
@@ -25,7 +37,7 @@ export const identifyImageWithGemini = async (base64Image: string): Promise<stri
             }
           },
           {
-            text: "Identify the main waste item in this image. Return ONLY the name of the item (e.g., 'plastic bottle', 'banana peel', 'newspaper'). Keep it simple and generic enough to match recycling categories."
+            text: IMAGE_PROMPT
           }
         ]
       }
@@ -35,6 +47,34 @@ export const identifyImageWithGemini = async (base64Image: string): Promise<stri
     return text ? text.trim().toLowerCase() : null;
   } catch (error) {
     console.error("Error identifying image with Gemini:", error);
+    return null;
+  }
+};
+
+export const findBestMatchWithGemini = async (query: string, options: string[]): Promise<string[] | null> => {
+  if (!process.env.API_KEY) return null;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-flash-lite-latest',
+      contents: { text: `List: ${JSON.stringify(options)}\nInput: "${query}"` },
+      config: {
+        systemInstruction: MATCHING_SYSTEM_INSTRUCTION,
+        temperature: 0.1
+      }
+    });
+
+    const text = response.text?.trim();
+    if (!text || text.toLowerCase() === 'null') return null;
+
+    // Split by the separator and clean up
+    const matches = text.split('|||').map(s => s.trim()).filter(s => options.includes(s));
+    
+    return matches.length > 0 ? matches : null;
+  } catch (error) {
+    console.error("Gemini text match error:", error);
     return null;
   }
 };

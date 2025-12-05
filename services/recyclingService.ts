@@ -1,9 +1,9 @@
 import { CITY_RULES } from '../constants';
 import { AnalysisResult, BinDefinition } from '../types';
 import { identifyImageWithAI } from './visionService';
-import { identifyImageWithGemini } from './geminiService';
+import { identifyImageWithGemini, findBestMatchWithGemini } from './geminiService';
 
-// Helper for fuzzy search
+// Helper for fuzzy search (Levenshtein)
 const levenshteinDistance = (a: string, b: string): number => {
   const matrix = [];
 
@@ -31,14 +31,16 @@ const levenshteinDistance = (a: string, b: string): number => {
   return matrix[b.length][a.length];
 };
 
-export const findBinForItem = (cityKey: string, itemName: string): AnalysisResult | null => {
+export const findBinForItem = async (cityKey: string, itemName: string): Promise<AnalysisResult | null> => {
   const city = CITY_RULES[cityKey];
   if (!city) return null;
 
   // Normalize input
   const normalizedItem = itemName.toLowerCase().trim();
 
-  // 1. Exact Match
+  // ---------------------------------------------------------
+  // 1. Exact Match (Fastest)
+  // ---------------------------------------------------------
   if (city.mappings[normalizedItem]) {
     const binKeys = city.mappings[normalizedItem];
     const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
@@ -48,72 +50,146 @@ export const findBinForItem = (cityKey: string, itemName: string): AnalysisResul
     };
   }
 
-  // 2. Ambiguity Check (Does the input match multiple distinct keys?)
-  // Example: "pizza box" matches "pizza box (clean)" and "pizza box (dirty)"
-  const ambiguousMatches = Object.keys(city.mappings).filter(key => key.includes(normalizedItem));
+  // ---------------------------------------------------------
+  // 2. AI Semantic Match (Gemini) - The "Smart" Layer
+  // ---------------------------------------------------------
+  // We use this before fuzzy matching to handle cases like "plastic chair" -> "plastic objects"
+  // which simple token matching might miss or confuse with "plastic bags".
   
-  // Filter out duplicates if logic creates any, though keys are unique
+  // Get all available keys for context
+  const allKeys = Object.keys(city.mappings);
+  
+  // Call Gemini
+  const aiMatches = await findBestMatchWithGemini(normalizedItem, allKeys);
+
+  if (aiMatches && aiMatches.length > 0) {
+    if (aiMatches.length === 1) {
+      // Single confident match
+      const bestKey = aiMatches[0];
+      const binKeys = city.mappings[bestKey];
+      const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
+      return {
+        bins: bins,
+        matchedItemName: bestKey,
+        confidence: 0.95
+      };
+    } else {
+      // Multiple semantic candidates
+      return {
+        matchedItemName: normalizedItem,
+        alternatives: aiMatches
+      };
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 3. Fallback: Algorithmic Search (Offline / No Key)
+  // ---------------------------------------------------------
+
+  // A. Ambiguity Check (Substring in Keys)
+  // Example: "pizza box" matches "pizza box (clean)" and "pizza box (dirty)"
+  const ambiguousMatches = allKeys.filter(key => key.includes(normalizedItem));
+  
   if (ambiguousMatches.length > 1) {
     return {
       matchedItemName: normalizedItem,
       alternatives: ambiguousMatches
     };
-  }
-  
-  // If exactly one match found via "Query matches part of Key"
-  if (ambiguousMatches.length === 1) {
+  } else if (ambiguousMatches.length === 1) {
     const matchedKey = ambiguousMatches[0];
     const binKeys = city.mappings[matchedKey];
     const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
     return {
       bins: bins,
-      matchedItemName: matchedKey // Return the full proper name
+      matchedItemName: matchedKey
     };
   }
 
-  // 3. Inverse Partial Match (Query includes Key)
-  // Example: "large plastic bottle" contains "plastic bottle"
-  const matchedKey = Object.keys(city.mappings)
+  // B. Inverse Partial Match (Query includes Key)
+  // "red plastic bottle" -> matches "plastic bottle"
+  const inverseMatches = allKeys
     .filter(key => normalizedItem.includes(key))
-    .sort((a, b) => b.length - a.length)[0];
+    .sort((a, b) => b.length - a.length); // Longest match first
   
-  if (matchedKey) {
-    const binKeys = city.mappings[matchedKey];
-    const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
-    return {
-      bins: bins,
-      matchedItemName: matchedKey // Return the recognized part
-    };
+  if (inverseMatches.length > 0) {
+    const bestKey = inverseMatches[0];
+    // Only use if it covers a decent part of the string to avoid "a" matching "banana"
+    if (bestKey.length > normalizedItem.length * 0.4) {
+        const binKeys = city.mappings[bestKey];
+        const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
+        return {
+            bins: bins,
+            matchedItemName: bestKey
+        };
+    }
   }
 
-  // 4. Fuzzy Match (Levenshtein Distance) - "Did you mean...?" logic
-  const keys = Object.keys(city.mappings);
+  // C. Token-Based Scoring
+  const queryTokens = normalizedItem.split(/[\s\-_]+/).filter(t => t.length > 2);
+  
+  if (queryTokens.length > 0) {
+    const scoredCandidates: { key: string, score: number }[] = [];
+    
+    allKeys.forEach(key => {
+      const keyTokens = key.toLowerCase().split(/[\s\(\)\-\/,]+/).filter(t => t.length > 2);
+      let matchCount = 0;
+      queryTokens.forEach(qt => {
+        if (keyTokens.some(kt => kt.includes(qt) || qt.includes(kt))) {
+          matchCount++;
+        }
+      });
+      if (matchCount > 0) {
+        scoredCandidates.push({ key, score: matchCount });
+      }
+    });
+
+    scoredCandidates.sort((a, b) => b.score - a.score);
+    const topScore = scoredCandidates[0]?.score || 0;
+
+    if (topScore > 0) {
+      const topMatches = scoredCandidates.filter(c => c.score === topScore);
+      
+      // If multiple items have the same top score, or very close scores, it's ambiguous.
+      // E.g. "plastic chair" -> "plastic bags" (1), "plastic objects" (1).
+      if (topMatches.length > 1) {
+        return {
+          matchedItemName: normalizedItem,
+          alternatives: topMatches.map(c => c.key).slice(0, 8)
+        };
+      }
+      
+      const winner = topMatches[0];
+      const binKeys = city.mappings[winner.key];
+      const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
+      return {
+        bins: bins,
+        matchedItemName: winner.key
+      };
+    }
+  }
+
+  // D. Fuzzy Match (Levenshtein Distance) - Last Resort
   let bestMatchKey = '';
   let minDistance = Infinity;
 
-  for (const key of keys) {
+  for (const key of allKeys) {
     const dist = levenshteinDistance(normalizedItem, key);
-    // Optimization: if dist is very large already, ignore
     if (dist < minDistance) {
       minDistance = dist;
       bestMatchKey = key;
     }
   }
 
-  // Determine threshold based on string length to avoid false positives on short words
-  // Length <= 3: dist 0 (must be exact, handled above)
-  // Length 4-6: dist <= 2 (allows typos like 'botle')
-  // Length > 6: dist <= 4 (allows more variance for 'closest thing')
   let allowedDistance = 0;
-  if (normalizedItem.length > 6) allowedDistance = 4;
-  else if (normalizedItem.length > 3) allowedDistance = 2;
+  if (normalizedItem.length > 6) allowedDistance = 3;
+  else if (normalizedItem.length > 3) allowedDistance = 1;
 
   if (bestMatchKey && minDistance <= allowedDistance) {
     const binKeys = city.mappings[bestMatchKey];
     const bins: BinDefinition[] = binKeys.map(key => city.bins[key]).filter(Boolean);
     return {
       bins: bins,
-      matchedItemName: bestMatchKey, // Return the corrected name from DB so the UI says "Plastic Bottle" instead of "plstic botle"
+      matchedItemName: bestMatchKey,
       confidence: 0.8
     };
   }
@@ -153,5 +229,5 @@ export const processImage = async (file: File, cityKey: string): Promise<Analysi
   }
 
   // Map the identified item (e.g. "pop bottle") to a bin rule
-  return findBinForItem(cityKey, identifiedItem);
+  return await findBinForItem(cityKey, identifiedItem);
 };
