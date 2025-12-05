@@ -1,0 +1,7 @@
+{
+  "name": "RecycleAT - AI Recycling Copilot",
+  "description": "A smart, AI-powered recycling assistant for Austrian cities that helps you sort waste correctly in seconds.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
