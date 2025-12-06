@@ -6,11 +6,11 @@
 
 View your app in AI Studio: https://ai.studio/apps/drive/1g--p1jATLXpSle69gcU6ZWq9KCIYA2ss
 
-You need a google account and please accepts all the prompts. Usage is free.
+You need an google account and accept all the prompts. Usage is free.
 
 
 
-#About the project
+# About the project
 ## Inspiration
 Sorting rules differ from country to country, and even from city to city. It can be hard to know where to put trash correctly. With our easily accessible web app, users can get results based on official data per city. It’s also a tool we genuinely want to use ourselves, as we sometimes struggle with proper waste sorting.
 
