@@ -1,7 +1,7 @@
 import React from 'react';
 import { BinDefinition, Language, BinIconType } from '../types';
 import { UI_STRINGS } from '../constants';
-import { ArrowLeft, RefreshCw, Info, ChevronRight, Leaf, Newspaper, Wine, Milk, Trash2, Battery, Box, Lightbulb } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Info, ChevronRight, Leaf, Newspaper, Wine, Milk, Trash2, Battery, Box, Lightbulb, Shirt, Coins } from 'lucide-react';
 
 interface ResultCardProps {
   bins: BinDefinition[];
@@ -31,12 +31,14 @@ const ResultCard: React.FC<ResultCardProps> = ({ bins, itemName, originalQuery, 
       case 'metal': return <Box className="text-white w-8 h-8 opacity-90" />; // Generic container for metal
       case 'rest': return <Trash2 className="text-white w-8 h-8 opacity-90" />;
       case 'asz': return <Battery className="text-white w-8 h-8 opacity-90" />;
+      case 'shirt': return <Shirt className="text-white w-8 h-8 opacity-90" />;
+      case 'bottle': return <Coins className="text-white w-8 h-8 opacity-90" />;
       default: return <RefreshCw className="text-white w-8 h-8 opacity-90" />;
     }
   };
 
   return (
-    <div className="w-full max-w-md px-6 animate-fade-in-up">
+    <div className="w-full max-w-md md:max-w-2xl px-6 animate-fade-in-up">
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
         
         <div className="h-4 w-full flex">

@@ -26,35 +26,21 @@ const normalizeBinKey = (key: string): string => {
 const findHelpfulTip = (itemName: string, bins: BinDefinition[]): GeneralRule | undefined => {
   const lowerItem = itemName.toLowerCase();
   
+  // Helper to check if item matches any keywords of a rule
+  const matchesRule = (ruleId: string): boolean => {
+    const rule = GENERAL_RULES.find(r => r.id === ruleId);
+    if (!rule || !rule.keywords) return false;
+    return rule.keywords.some(k => lowerItem.includes(k));
+  };
+
   // 1. High Priority: Hazardous / Special Items based on keywords
-  
-  // Clothing & Textiles
-  if (['cloth', 'kleidung', 'textil', 'shoe', 'schuh', 'shirt', 'hose', 'dress', 'jack', 'coat', 'garment', 'sneaker', 'boot'].some(k => lowerItem.includes(k))) {
-    return GENERAL_RULES.find(r => r.id === 'clothing');
-  }
-
-  // Medicines
-  if (['medicin', 'medikament', 'arznei', 'pill', 'pharmacy', 'apotheke', 'drug', 'tablet'].some(k => lowerItem.includes(k))) {
-    return GENERAL_RULES.find(r => r.id === 'medicines');
-  }
-
-  // Lightbulbs
-  if (['bulb', 'birne', 'lamp', 'leucht', 'light', 'licht', 'neon', 'led'].some(k => lowerItem.includes(k)) && !lowerItem.includes('shade') && !lowerItem.includes('schirm')) {
-    return GENERAL_RULES.find(r => r.id === 'lightbulbs');
-  }
-
-  // Batteries
-  if (lowerItem.includes('battery') || lowerItem.includes('batterie') || lowerItem.includes('akku')) {
-    return GENERAL_RULES.find(r => r.id === 'batteries');
-  }
-  // Oil / Fat
-  if (lowerItem.includes('oil') || lowerItem.includes('öl') || lowerItem.includes('fat') || lowerItem.includes('fett')) {
-    return GENERAL_RULES.find(r => r.id === 'oil');
-  }
-  // Electronics
-  if (['electric', 'elektro', 'phone', 'handy', 'computer', 'tv', 'cable', 'kabel', 'printer', 'drucker', 'device', 'gerät'].some(k => lowerItem.includes(k))) {
-    return GENERAL_RULES.find(r => r.id === 'electronics');
-  }
+  // These should trigger even if the bin might be generic
+  if (matchesRule('batteries')) return GENERAL_RULES.find(r => r.id === 'batteries');
+  if (matchesRule('medicines')) return GENERAL_RULES.find(r => r.id === 'medicines');
+  if (matchesRule('lightbulbs') && !lowerItem.includes('shade') && !lowerItem.includes('schirm')) return GENERAL_RULES.find(r => r.id === 'lightbulbs');
+  if (matchesRule('oil')) return GENERAL_RULES.find(r => r.id === 'oil');
+  if (matchesRule('electronics')) return GENERAL_RULES.find(r => r.id === 'electronics');
+  if (matchesRule('clothing')) return GENERAL_RULES.find(r => r.id === 'clothing');
 
   // 2. Medium Priority: Based on the Bin Type determined
   if (bins.length > 0) {
@@ -63,11 +49,12 @@ const findHelpfulTip = (itemName: string, bins: BinDefinition[]): GeneralRule | 
 
     if (binIcon === 'plastic' || binIcon === 'metal') {
       // Check for Pfand (Deposit) - mainly for bottles and cans
-      if (['bottle', 'flasche', 'can', 'dose'].some(k => lowerItem.includes(k))) {
+      if (matchesRule('pfand')) {
          const pfand = GENERAL_RULES.find(r => r.id === 'pfand');
          if (pfand) return pfand;
       }
 
+      // Explicitly show Plastic tip for plastic bin items, as requested
       if (binIcon === 'plastic') {
         return GENERAL_RULES.find(r => r.id === 'plastic');
       }
@@ -80,13 +67,14 @@ const findHelpfulTip = (itemName: string, bins: BinDefinition[]): GeneralRule | 
       return GENERAL_RULES.find(r => r.id === 'organic');
     }
     if (binIcon === 'paper') {
-      // Only show box tip if it looks like a box, otherwise generic paper rule? 
-      // The 'boxes' rule specifically talks about folding boxes.
-      if (lowerItem.includes('box') || lowerItem.includes('karton') || lowerItem.includes('pizza') || lowerItem.includes('packet')) {
+      if (matchesRule('boxes')) {
         return GENERAL_RULES.find(r => r.id === 'boxes');
       }
     }
   }
+
+  // 3. Fallback: Check keywords if no specific bin logic triggered (e.g. for ambiguous bins)
+  if (matchesRule('plastic')) return GENERAL_RULES.find(r => r.id === 'plastic');
 
   return undefined;
 };
@@ -163,7 +151,7 @@ export const findBinForItem = async (cityKey: string, itemName: string, language
           result = {
             bins,
             matchedItemName: bestKey,
-            confidence: 0.95
+            confidence: 0.8
           };
         }
       } else {
@@ -175,8 +163,15 @@ export const findBinForItem = async (cityKey: string, itemName: string, language
     }
   }
 
-  // 5. Attach Helpful Tip if result found
+  // 5. Post-Processing: Sort Bins and Attach Tips
   if (result && result.bins) {
+    // Sort Bins: Ensure ASZ (Recycling Center) is always last if multiple bins exist
+    result.bins.sort((a, b) => {
+      if (a.icon === 'asz' && b.icon !== 'asz') return 1;
+      if (a.icon !== 'asz' && b.icon === 'asz') return -1;
+      return 0;
+    });
+
     const tip = findHelpfulTip(result.matchedItemName, result.bins);
     if (tip) {
       result.helpfulTip = tip;

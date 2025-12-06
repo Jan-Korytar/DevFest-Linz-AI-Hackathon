@@ -2,12 +2,20 @@ import { GoogleGenAI } from "@google/genai";
 import { Language } from '../types';
 
 const MATCHING_SYSTEM_INSTRUCTION = `
-Task: Match user input to closest waste category from the provided list.
+Task: Match user input to the closest waste category from the provided list.
+
 Rules:
-1. Closest semantic match.
-2. It is best to reurn just 1. Try to always return the best match.
-2. Only If ambiguous, return top 3. 
-3. If no match, return "null".
+1. Closest semantic match is priority.
+2. Pay strict attention to adjectives describing state (e.g., 'dirty', 'clean', 'broken', 'empty'). Match to the specific state if available in the list.
+   - Example: 'dirty pizza box' should match 'Pizza box (dirty)' and NOT 'Pizza box (clean)'.
+   - Example: 'dirty bottle' implies residue; check for specific waste types (e.g., 'Oil bottle') or residual waste if no 'dirty bottle' option exists.
+3. Generalize specific biological items (e.g. 'horse meat' -> 'meat scraps', 'pork' -> 'meat', 'rose' -> 'flower', 'dead plant' -> 'plant waste').
+4. Identify brand names (e.g. 'Coke' -> 'Can') and match to the generic item.
+5. If the input is a specific model (e.g. 'iPhone 13'), match to the device category (e.g. 'Mobile phone').
+6. Return just 1 best match usually.
+7. Only if ambiguous, return top 3, return multiple if there is distinction between clean and dirty, e.g dirty pizza box belongs to residual waste, clean to waste paper.
+8. If no match, return "null".
+
 Format: match1|||match2
 `;
 
@@ -32,7 +40,7 @@ export const identifyImageWithGemini = async (base64Image: string, language: Lan
       : base64Image;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
+      model: 'gemini-2.5-flash',
       contents: {
         parts: [
           {
@@ -63,7 +71,7 @@ export const findBestMatchWithGemini = async (query: string, options: string[]):
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
+      model: 'gemini-2.5-flash',
       contents: { text: `List: ${JSON.stringify(options)}\nInput: "${query}"` },
       config: {
         systemInstruction: MATCHING_SYSTEM_INSTRUCTION,

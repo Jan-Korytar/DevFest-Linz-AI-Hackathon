@@ -5,7 +5,7 @@ export interface LocalizedString {
   de: string;
 }
 
-export type BinIconType = 'plastic' | 'paper' | 'glass' | 'bio' | 'metal' | 'rest' | 'asz' | 'default';
+export type BinIconType = 'plastic' | 'paper' | 'glass' | 'bio' | 'metal' | 'rest' | 'asz' | 'shirt' | 'bottle' | 'default';
 
 export interface BinDefinition {
   name: LocalizedString;
@@ -38,6 +38,7 @@ export interface GeneralRule {
   icon: string;
   title: LocalizedString;
   description: LocalizedString;
+  keywords?: string[];
 }
 
 export interface AnalysisResult {
