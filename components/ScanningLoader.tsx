@@ -1,11 +1,15 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { Language } from '../types';
+import { UI_STRINGS } from '../constants';
 
 interface ScanningLoaderProps {
   cityName: string;
+  language: Language;
 }
 
-const ScanningLoader: React.FC<ScanningLoaderProps> = ({ cityName }) => {
+const ScanningLoader: React.FC<ScanningLoaderProps> = ({ cityName, language }) => {
+  const t = UI_STRINGS;
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-pulse">
       <div className="relative mb-8">
@@ -14,8 +18,8 @@ const ScanningLoader: React.FC<ScanningLoaderProps> = ({ cityName }) => {
         </div>
       </div>
       
-      <h3 className="text-xl font-semibold text-eco-slate mb-2">Identifying item...</h3>
-      <p className="text-gray-400">Checking local rules for {cityName}</p>
+      <h3 className="text-xl font-semibold text-eco-slate mb-2">{t.identifying[language]}</h3>
+      <p className="text-gray-400">{t.checkingRules[language]} {cityName}</p>
     </div>
   );
 };

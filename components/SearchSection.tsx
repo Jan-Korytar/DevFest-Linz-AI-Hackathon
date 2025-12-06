@@ -1,14 +1,30 @@
 import React, { useState, useRef } from 'react';
 import { Search, Camera } from 'lucide-react';
+import { Language } from '../types';
+import { UI_STRINGS } from '../constants';
 
 interface SearchSectionProps {
   onSearch: (query: string) => void;
   onImageUpload: (file: File) => void;
+  language: Language;
 }
 
-const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload }) => {
+const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload, language }) => {
   const [inputValue, setInputValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const WORD_LIMIT = 5;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Check word count
+    const words = val.trim().split(/\s+/);
+    
+    // Allow typing if under limit, or if deleting (length getting smaller)
+    if (words.length <= WORD_LIMIT || val.length < inputValue.length) {
+      setInputValue(val);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +39,13 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload }
     }
   };
 
+  const t = UI_STRINGS;
+
   return (
-    <div className="w-full max-w-xl px-6">
+    <div className="w-full max-w-xl px-6 mx-auto">
       <h1 className="text-3xl md:text-4xl font-bold text-center text-eco-slate mb-8 leading-tight">
-        What are you <br/>
-        <span className="text-eco-primary">throwing away?</span>
+        {t.titleLine1[language]} <br/>
+        <span className="text-eco-primary">{t.titleLine2[language]}</span>
       </h1>
 
       <form onSubmit={handleSubmit} className="relative w-full group">
@@ -38,8 +56,8 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload }
         <input
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="e.g. plastic bottle, newspaper..."
+          onChange={handleInputChange}
+          placeholder={t.placeholder[language]}
           className="w-full pl-12 pr-14 py-4 md:py-5 bg-white border-2 border-transparent focus:border-eco-primary shadow-lg shadow-gray-200/50 rounded-full text-lg placeholder:text-gray-400 focus:outline-none transition-all duration-300"
         />
 
@@ -62,10 +80,12 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload }
           onChange={handleFileChange}
         />
       </form>
-
-      <p className="text-center text-gray-400 mt-6 text-sm font-medium">
-        Sort waste correctly in seconds.
-      </p>
+      
+      <div className="flex justify-center mt-2 px-2 w-full">
+        <p className="text-gray-400 text-sm font-medium text-center">
+          {t.subtitle[language]}
+        </p>
+      </div>
     </div>
   );
 };

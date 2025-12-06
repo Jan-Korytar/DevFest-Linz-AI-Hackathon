@@ -1,22 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
-
-// Prompts are defined here for easy editing
-const IMAGE_PROMPT = "Identify the main waste item in this image. Return ONLY the name of the item (e.g., 'plastic bottle', 'banana peel', 'newspaper'). Keep it simple and generic enough to match recycling categories.";
+import { Language } from '../types';
 
 const MATCHING_SYSTEM_INSTRUCTION = `
 Task: Match user input to closest waste category from the provided list.
 Rules:
 1. Closest semantic match.
-2. If ambiguous/multiple fit, return top 4.
+2. It is best to reurn just 1. Try to always return the best match.
+2. Only If ambiguous, return top 3. 
 3. If no match, return "null".
 Format: match1|||match2
 `;
 
-export const identifyImageWithGemini = async (base64Image: string): Promise<string | null> => {
+export const identifyImageWithGemini = async (base64Image: string, language: Language = 'en'): Promise<string | null> => {
   if (!process.env.API_KEY) {
     console.error("Gemini API Key is missing.");
     return null;
   }
+
+  const langName = language === 'de' ? 'German' : 'English';
+  const example = language === 'de' ? 'Plastikflasche' : 'plastic bottle';
+  
+  // Dynamic prompt based on language
+  const PROMPT = `Identify the main waste item in this image. Return ONLY the name of the item in ${langName} (e.g., '${example}', 'newspaper'). Keep it simple and generic enough to match recycling categories.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -37,7 +42,7 @@ export const identifyImageWithGemini = async (base64Image: string): Promise<stri
             }
           },
           {
-            text: IMAGE_PROMPT
+            text: PROMPT
           }
         ]
       }

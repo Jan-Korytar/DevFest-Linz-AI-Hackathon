@@ -1,16 +1,29 @@
+export type Language = 'en' | 'de';
+
+export interface LocalizedString {
+  en: string;
+  de: string;
+}
+
+export type BinIconType = 'plastic' | 'paper' | 'glass' | 'bio' | 'metal' | 'rest' | 'asz' | 'default';
+
 export interface BinDefinition {
-  name: string;
+  name: LocalizedString;
   color: string;
-  description?: string;
+  icon: BinIconType;
+  description?: LocalizedString;
+  detailedInstructions?: LocalizedString;
 }
 
 export interface CityRules {
   name: string;
+  officialWebsite: string;
   bins: {
     [key: string]: BinDefinition;
   };
   mappings: {
-    [item: string]: string[]; // item name -> array of bin keys (e.g., "banana" -> ["bio"])
+    en: { [item: string]: string[] };
+    de: { [item: string]: string[] };
   };
 }
 
@@ -20,9 +33,17 @@ export interface RecyclingData {
 
 export type CityKey = 'vienna' | 'graz' | 'linz' | 'salzburg';
 
+export interface GeneralRule {
+  id: string;
+  icon: string;
+  title: LocalizedString;
+  description: LocalizedString;
+}
+
 export interface AnalysisResult {
-  bins?: BinDefinition[]; // Changed from bin to bins array to support multiple destinations
+  bins?: BinDefinition[];
   matchedItemName: string;
   confidence?: number;
-  alternatives?: string[]; // For ambiguous results
+  alternatives?: string[];
+  helpfulTip?: GeneralRule;
 }
