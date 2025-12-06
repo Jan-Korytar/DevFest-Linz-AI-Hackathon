@@ -13,22 +13,21 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload, 
   const [inputValue, setInputValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const WORD_LIMIT = 5;
+  const MAX_CHARS = 100;
+  const MIN_CHARS = 2;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Check word count
-    const words = val.trim().split(/\s+/);
     
-    // Allow typing if under limit, or if deleting (length getting smaller)
-    if (words.length <= WORD_LIMIT || val.length < inputValue.length) {
+    // Strict character limit
+    if (val.length <= MAX_CHARS) {
       setInputValue(val);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim()) {
+    if (inputValue.trim().length >= MIN_CHARS) {
       onSearch(inputValue);
     }
   };
@@ -42,15 +41,15 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload, 
   const t = UI_STRINGS;
 
   return (
-    <div className="w-full max-w-xl px-6 mx-auto">
-      <h1 className="text-3xl md:text-4xl font-bold text-center text-eco-slate mb-8 leading-tight">
+    <div className="w-full max-w-[800px] px-6 mx-auto">
+      <h1 className="text-3xl md:text-5xl font-extrabold text-center text-gray-800 mb-10 leading-tight">
         {t.titleLine1[language]} <br/>
         <span className="text-eco-primary">{t.titleLine2[language]}</span>
       </h1>
 
       <form onSubmit={handleSubmit} className="relative w-full group">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="h-6 w-6 text-gray-400 group-focus-within:text-eco-primary transition-colors" />
+          <Search className="h-6 w-6 text-gray-600 group-focus-within:text-eco-primary transition-colors" />
         </div>
         
         <input
@@ -58,17 +57,18 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload, 
           value={inputValue}
           onChange={handleInputChange}
           placeholder={t.placeholder[language]}
-          className="w-full pl-12 pr-14 py-4 md:py-5 bg-white border-2 border-transparent focus:border-eco-primary shadow-lg shadow-gray-200/50 rounded-full text-lg placeholder:text-gray-400 focus:outline-none transition-all duration-300"
+          maxLength={MAX_CHARS}
+          className="w-full pl-12 pr-14 py-4 md:py-6 bg-white border-2 border-transparent focus:border-eco-primary shadow-lg shadow-gray-200/50 rounded-full text-xl placeholder:text-gray-600 text-gray-900 font-bold focus:outline-none transition-all duration-300"
         />
 
         <div className="absolute inset-y-0 right-2 flex items-center">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 bg-gray-100 hover:bg-eco-primary text-gray-500 hover:text-white rounded-full transition-all duration-300"
+            className="p-3 bg-gray-100 hover:bg-eco-primary text-gray-600 hover:text-white rounded-full transition-all duration-300"
             title="Scan Item"
           >
-            <Camera className="h-5 w-5" />
+            <Camera className="h-6 w-6" />
           </button>
         </div>
         
@@ -81,8 +81,8 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch, onImageUpload, 
         />
       </form>
       
-      <div className="flex justify-center mt-2 px-2 w-full">
-        <p className="text-gray-400 text-sm font-medium text-center">
+      <div className="flex justify-center mt-4 px-2 w-full">
+        <p className="text-gray-700 text-base font-bold text-center">
           {t.subtitle[language]}
         </p>
       </div>

@@ -91,3 +91,49 @@ export const findBestMatchWithGemini = async (query: string, options: string[]):
     return null;
   }
 };
+
+export const findRelevantGeneralRule = async (item: string, rules: {id: string, title: string, description: string}[]): Promise<string | null> => {
+  if (!process.env.API_KEY) return null;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    // Format rules for the prompt
+    const ruleContext = rules.map(r => `ID: "${r.id}"\nTitle: "${r.title}"\nText: "${r.description}"`).join('\n---\n');
+
+    const prompt = `
+      I have a waste item: "${item}".
+      Here is a list of specific recycling rules/tips for this city:
+
+      ${ruleContext}
+
+      Task: Choose the ONE rule ID that is most relevant to this item.
+      
+      Guidelines:
+      - CRITICAL: If the item is any kind of bottle or bottles (plastic, glass) or beverage can, you MUST select the 'pfand' (Deposit System) rule if it exists.
+      - If the item is hazardous (battery, oil, chemical) or special (electronics), pick that rule.
+      - If the item is a box/carton, pick the rule about flattening boxes.
+      - If the item fits the rule's context (e.g. "dirty pizza box" fits a rule discussing "dirty paper"), pick it.
+      - If NO rule is specifically helpful or relevant, return "null".
+      
+      Return ONLY the ID string.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-flash-lite-latest',
+      contents: { text: prompt },
+      config: { temperature: 0.1 }
+    });
+
+    const text = response.text?.trim().replace(/['"]/g, ''); 
+    if (!text || text.toLowerCase() === 'null') return null;
+    
+    // Check if valid ID
+    if (rules.some(r => r.id === text)) return text;
+    return null;
+
+  } catch (error) {
+    console.error("Gemini Tip Match Error:", error);
+    return null;
+  }
+};

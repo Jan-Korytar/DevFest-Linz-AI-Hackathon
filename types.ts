@@ -31,7 +31,7 @@ export interface RecyclingData {
   [cityKey: string]: CityRules;
 }
 
-export type CityKey = 'vienna' | 'graz' | 'linz' | 'salzburg';
+export type CityKey = 'vienna' | 'linz';
 
 export interface GeneralRule {
   id: string;

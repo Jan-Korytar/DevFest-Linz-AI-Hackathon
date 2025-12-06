@@ -111,17 +111,17 @@ const App: React.FC = () => {
       if (trimmed.startsWith('•')) {
          return (
            <div key={i} className="flex gap-3 mb-2 pl-1">
-             <span className="text-eco-primary font-bold shrink-0">•</span>
-             <span className="text-gray-700 leading-snug">{trimmed.substring(1).trim()}</span>
+             <span className="text-eco-primary font-extrabold shrink-0 text-lg">•</span>
+             <span className="text-gray-900 font-semibold leading-relaxed">{trimmed.substring(1).trim()}</span>
            </div>
          );
       }
       
       if (trimmed.endsWith(':') || trimmed.endsWith('!')) {
-         return <h3 key={i} className="font-bold text-gray-900 mt-4 mb-2">{trimmed}</h3>;
+         return <h3 key={i} className="font-bold text-gray-950 mt-5 mb-2 text-lg">{trimmed}</h3>;
       }
       
-      return <p key={i} className="mb-2 text-gray-700 leading-relaxed">{trimmed}</p>;
+      return <p key={i} className="mb-2 text-gray-900 font-medium leading-relaxed">{trimmed}</p>;
     });
   };
 
@@ -141,15 +141,15 @@ const App: React.FC = () => {
           </div>
           
           {websiteUrl && (
-            <div className="mt-2 pt-4 border-t border-gray-100">
+            <div className="mt-2 pt-4 border-t border-gray-200">
                <a 
                  href={websiteUrl} 
                  target="_blank" 
                  rel="noopener noreferrer"
-                 className="flex items-center justify-center gap-2 w-full py-3 bg-gray-50 hover:bg-eco-bg text-eco-primary font-bold rounded-xl transition-all border border-gray-200 hover:border-eco-primary shadow-sm hover:shadow-md group"
+                 className="flex items-center justify-center gap-2 w-full py-4 bg-gray-50 hover:bg-eco-bg text-eco-primary font-extrabold rounded-xl transition-all border border-gray-300 hover:border-eco-primary shadow-sm hover:shadow-md group"
                >
                  <span>{t.officialWebsiteLabel[language]}</span>
-                 <ExternalLink size={16} className="group-hover:translate-x-1 transition-transform"/>
+                 <ExternalLink size={18} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform"/>
                </a>
             </div>
           )}
@@ -161,9 +161,13 @@ const App: React.FC = () => {
   const openAbout = () => setInfoModal({
     title: t.about[language],
     content: (
-      <div className="space-y-4 text-gray-700">
-        <p>{language === 'en' ? "RecycleAT is an AI-powered recycling assistant designed specifically for Austrian cities." : "RecycleAT ist ein KI-gestützter Recycling-Assistent speziell für österreichische Städte."}</p>
-        <p className="text-xs text-gray-400 mt-4">Version 1.2.0 (Austria Edition)</p>
+      <div className="space-y-4 text-gray-900 font-medium leading-relaxed">
+        <p>
+          {language === 'en' 
+            ? "RecycleAT is an AI-powered recycling assistant designed specifically for the AI DevFest in Linz on 6.12.2025." 
+            : "RecycleAT ist ein KI-gestützter Recycling-Assistent, der speziell für das AI DevFest in Linz am 6.12.2025 entwickelt wurde."}
+        </p>
+        <p className="text-xs text-gray-600 mt-4 font-bold">Version 1.2.0 (DevFest Edition)</p>
       </div>
     )
   });
@@ -171,12 +175,16 @@ const App: React.FC = () => {
   const openHowItWorks = () => setInfoModal({
     title: t.howItWorks[language],
     content: (
-      <div className="space-y-4 text-gray-700">
-        <p>{language === 'en' ? "We use the official waste management rules provided by each supported city." : "Wir verwenden die offiziellen Abfalltrennregeln der unterstützten Städte."}</p>
+      <div className="space-y-4 text-gray-900 font-medium leading-relaxed">
+        <p>
+          {language === 'en' 
+            ? "We check your searched term against an official database to find the closest match. We then tell you exactly which bin to use and give you practical tips from our database, matched using AI." 
+            : "Wir prüfen deinen Suchbegriff gegen eine offizielle Datenbank, um den besten Treffer zu finden. Dann sagen wir dir genau, welche Tonne du verwenden sollst und geben dir praktische Tipps aus unserer Datenbank, passend ausgewählt durch KI."}
+        </p>
         <ol className="list-decimal pl-5 space-y-2">
-           <li><strong>{language === 'en' ? "Identify" : "Erkennen"}:</strong> Google Gemini AI.</li>
-           <li><strong>{language === 'en' ? "Match" : "Zuordnen"}:</strong> Local database.</li>
-           <li><strong>{language === 'en' ? "Sort" : "Trennen"}:</strong> {language === 'en' ? "We tell you exactly which bin to use." : "Wir sagen dir, in welche Tonne es gehört."}</li>
+           <li><strong className="text-gray-950">{language === 'en' ? "Identify" : "Erkennen"}:</strong> Google Gemini AI.</li>
+           <li><strong className="text-gray-950">{language === 'en' ? "Match" : "Zuordnen"}:</strong> {language === 'en' ? "Official Database Match." : "Offizieller Datenbankabgleich."}</li>
+           <li><strong className="text-gray-950">{language === 'en' ? "Sort" : "Trennen"}:</strong> {language === 'en' ? "We provide practical, AI-selected tips." : "Wir geben praktische, KI-ausgewählte Tipps."}</li>
         </ol>
       </div>
     )
@@ -185,8 +193,12 @@ const App: React.FC = () => {
   const openPrivacy = () => setInfoModal({
     title: t.privacy[language],
     content: (
-      <div className="space-y-4 text-gray-700">
-        <p>{language === 'en' ? "We do not collect personal data. Images are processed by Google Gemini and not stored by this application." : "Wir sammeln keine persönlichen Daten. Bilder werden von Google Gemini verarbeitet und nicht von dieser Anwendung gespeichert."}</p>
+      <div className="space-y-4 text-gray-900 font-medium leading-relaxed">
+        <p>
+          {language === 'en' 
+            ? "We do not collect any personal data. All calls to the Google Gemini API are anonymized, and no images or text are stored by this application." 
+            : "Wir sammeln keine persönlichen Daten. Alle Aufrufe an die Google Gemini API sind anonymisiert, und weder Bilder noch Text werden von dieser Anwendung gespeichert."}
+        </p>
       </div>
     )
   });
@@ -211,13 +223,13 @@ const App: React.FC = () => {
              if (rule.icon === 'Lightbulb') IconComponent = Lightbulb;
 
              return (
-               <div key={rule.id} className="bg-gray-50 rounded-2xl p-4 flex gap-4 items-start">
-                 <div className="bg-white p-2 rounded-full shadow-sm shrink-0 text-eco-primary mt-1">
-                   <IconComponent size={24} />
+               <div key={rule.id} className="bg-gray-50 rounded-2xl p-5 flex gap-4 items-start border border-gray-200">
+                 <div className="bg-white p-2.5 rounded-full shadow-sm shrink-0 text-eco-primary mt-0.5 border border-gray-200">
+                   <IconComponent size={24} strokeWidth={2.5} />
                  </div>
                  <div>
-                   <h3 className="font-bold text-gray-900 mb-1">{rule.title[language]}</h3>
-                   <p className="text-gray-600 text-sm leading-relaxed">{rule.description[language]}</p>
+                   <h3 className="font-extrabold text-gray-950 mb-1 text-lg">{rule.title[language]}</h3>
+                   <p className="text-gray-800 font-medium text-sm leading-relaxed">{rule.description[language]}</p>
                  </div>
                </div>
              );
@@ -228,7 +240,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-800 bg-[#F9F9F7] transition-colors duration-500">
+    <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-[#F9F9F7] transition-colors duration-500">
       <Header 
         currentCity={currentCity} 
         onCityChange={handleCityChange} 
@@ -276,13 +288,13 @@ const App: React.FC = () => {
 
         {appState === 'not-found' && (
            <div className="text-center px-6 animate-fade-in">
-             <div className="bg-white p-8 rounded-3xl shadow-lg max-w-md mx-auto">
-               <span className="text-4xl mb-4 block">🤔</span>
-               <h2 className="text-xl font-bold text-gray-800 mb-2">{t.notFoundTitle[language]}</h2>
-               <p className="text-gray-500 mb-6">{t.notFoundDesc[language]} "{lastQuery}" {t.in[language]} {CITY_RULES[currentCity].name}.</p>
+             <div className="bg-white p-8 rounded-3xl shadow-lg max-w-md mx-auto border border-gray-200">
+               <span className="text-5xl mb-6 block">🤔</span>
+               <h2 className="text-2xl font-extrabold text-gray-950 mb-3">{t.notFoundTitle[language]}</h2>
+               <p className="text-gray-800 font-semibold mb-8 text-lg">{t.notFoundDesc[language]} "<span className="text-gray-950 font-bold">{lastQuery}</span>" {t.in[language]} {CITY_RULES[currentCity].name}.</p>
                <button 
                  onClick={handleReset}
-                 className="px-6 py-3 bg-eco-primary text-white rounded-full font-medium hover:bg-opacity-90 transition"
+                 className="px-8 py-3 bg-eco-primary text-white rounded-full font-bold hover:bg-opacity-90 transition shadow-lg shadow-eco-primary/30"
                >
                  {t.tryAgain[language]}
                </button>

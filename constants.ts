@@ -1,14 +1,10 @@
 import { RecyclingData, Language } from './types';
 import { VIENNA_RULES } from './data_vienna';
-import { GRAZ_RULES } from './data_graz';
 import { LINZ_RULES } from './data_linz';
-import { SALZBURG_RULES } from './data_salzburg';
 
 export const CITY_RULES: RecyclingData = {
   vienna: VIENNA_RULES,
-  graz: GRAZ_RULES,
-  linz: LINZ_RULES,
-  salzburg: SALZBURG_RULES
+  linz: LINZ_RULES
 };
 
 export const CITIES = Object.keys(CITY_RULES).map(key => ({

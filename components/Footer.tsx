@@ -14,12 +14,12 @@ const Footer: React.FC<FooterProps> = ({ onOpenPrivacy, onOpenHowItWorks, onOpen
   const t = UI_STRINGS;
   
   return (
-    <footer className="w-full py-8 text-center text-gray-400 text-sm mt-auto">
+    <footer className="w-full py-8 text-center text-gray-700 font-bold text-sm mt-auto">
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-3 px-4">
-        <button onClick={onOpenSpecialRules} className="text-eco-primary font-semibold hover:text-eco-secondary transition-colors focus:outline-none">{t.specialRules[language]}</button>
-        <button onClick={onOpenHowItWorks} className="hover:text-eco-primary transition-colors focus:outline-none">{t.howItWorks[language]}</button>
-        <button onClick={onOpenAbout} className="hover:text-eco-primary transition-colors focus:outline-none">{t.about[language]}</button>
-        <button onClick={onOpenPrivacy} className="hover:text-eco-primary transition-colors focus:outline-none">{t.privacy[language]}</button>
+        <button onClick={onOpenSpecialRules} className="text-eco-primary hover:text-eco-secondary transition-colors focus:outline-none">{t.specialRules[language]}</button>
+        <button onClick={onOpenHowItWorks} className="hover:text-gray-900 transition-colors focus:outline-none">{t.howItWorks[language]}</button>
+        <button onClick={onOpenAbout} className="hover:text-gray-900 transition-colors focus:outline-none">{t.about[language]}</button>
+        <button onClick={onOpenPrivacy} className="hover:text-gray-900 transition-colors focus:outline-none">{t.privacy[language]}</button>
       </div>
       <p>&copy; {new Date().getFullYear()} RecycleAT. {t.footerText[language]}</p>
     </footer>

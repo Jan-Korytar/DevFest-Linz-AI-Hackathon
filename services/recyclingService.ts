@@ -1,6 +1,6 @@
 import { CITY_RULES } from '../constants';
 import { AnalysisResult, BinDefinition, Language, GeneralRule } from '../types';
-import { identifyImageWithGemini, findBestMatchWithGemini } from './geminiService';
+import { identifyImageWithGemini, findBestMatchWithGemini, findRelevantGeneralRule } from './geminiService';
 import { GENERAL_RULES } from '../data_general_rules';
 
 // Helper to map specific city data strings (like Linz's German names) to canonical bin IDs
@@ -22,72 +22,19 @@ const normalizeBinKey = (key: string): string => {
   return k;
 };
 
-// Heuristic to find a relevant general rule tip based on the item name and the found bins
-const findHelpfulTip = (itemName: string, bins: BinDefinition[]): GeneralRule | undefined => {
-  const lowerItem = itemName.toLowerCase();
-  
-  // Helper to check if item matches any keywords of a rule
-  const matchesRule = (ruleId: string): boolean => {
-    const rule = GENERAL_RULES.find(r => r.id === ruleId);
-    if (!rule || !rule.keywords) return false;
-    return rule.keywords.some(k => lowerItem.includes(k));
-  };
-
-  // 1. High Priority: Hazardous / Special Items based on keywords
-  // These should trigger even if the bin might be generic
-  if (matchesRule('batteries')) return GENERAL_RULES.find(r => r.id === 'batteries');
-  if (matchesRule('medicines')) return GENERAL_RULES.find(r => r.id === 'medicines');
-  if (matchesRule('lightbulbs') && !lowerItem.includes('shade') && !lowerItem.includes('schirm')) return GENERAL_RULES.find(r => r.id === 'lightbulbs');
-  if (matchesRule('oil')) return GENERAL_RULES.find(r => r.id === 'oil');
-  if (matchesRule('electronics')) return GENERAL_RULES.find(r => r.id === 'electronics');
-  if (matchesRule('clothing')) return GENERAL_RULES.find(r => r.id === 'clothing');
-
-  // 2. Medium Priority: Based on the Bin Type determined
-  if (bins.length > 0) {
-    const mainBin = bins[0]; // Usually the first one is the primary
-    const binIcon = mainBin.icon;
-
-    if (binIcon === 'plastic' || binIcon === 'metal') {
-      // Check for Pfand (Deposit) - mainly for bottles and cans
-      if (matchesRule('pfand')) {
-         const pfand = GENERAL_RULES.find(r => r.id === 'pfand');
-         if (pfand) return pfand;
-      }
-
-      // Explicitly show Plastic tip for plastic bin items, as requested
-      if (binIcon === 'plastic') {
-        return GENERAL_RULES.find(r => r.id === 'plastic');
-      }
-    }
-    
-    if (binIcon === 'glass') {
-      return GENERAL_RULES.find(r => r.id === 'glass');
-    }
-    if (binIcon === 'bio') {
-      return GENERAL_RULES.find(r => r.id === 'organic');
-    }
-    if (binIcon === 'paper') {
-      if (matchesRule('boxes')) {
-        return GENERAL_RULES.find(r => r.id === 'boxes');
-      }
-    }
+export const findBinForItem = async (cityKey: string, itemName: string, language: Language): Promise<AnalysisResult | null> => {
+  // Backend Input Validation
+  const normalizedItem = itemName.trim().toLowerCase();
+  if (normalizedItem.length < 2 || normalizedItem.length > 100) {
+    console.warn("Input validation failed: Length must be between 2 and 100 characters.");
+    return null;
   }
 
-  // 3. Fallback: Check keywords if no specific bin logic triggered (e.g. for ambiguous bins)
-  if (matchesRule('plastic')) return GENERAL_RULES.find(r => r.id === 'plastic');
-
-  return undefined;
-};
-
-export const findBinForItem = async (cityKey: string, itemName: string, language: Language): Promise<AnalysisResult | null> => {
   const city = CITY_RULES[cityKey];
   if (!city) return null;
 
   const mappings = city.mappings[language];
   if (!mappings) return null;
-
-  // Normalize input item name
-  const normalizedItem = itemName.toLowerCase().trim();
 
   // 1. Prepare Case-Insensitive Lookup
   const lowerCaseMap = new Map<string, string>();
@@ -151,7 +98,7 @@ export const findBinForItem = async (cityKey: string, itemName: string, language
           result = {
             bins,
             matchedItemName: bestKey,
-            confidence: 0.8
+            confidence: 0.95
           };
         }
       } else {
@@ -172,9 +119,18 @@ export const findBinForItem = async (cityKey: string, itemName: string, language
       return 0;
     });
 
-    const tip = findHelpfulTip(result.matchedItemName, result.bins);
-    if (tip) {
-      result.helpfulTip = tip;
+    // Use Gemini to match the most relevant general rule/tip
+    // We send English titles/descriptions to the model for better matching
+    const ruleData = GENERAL_RULES.map(r => ({
+        id: r.id,
+        title: r.title.en,
+        description: r.description.en
+    }));
+
+    const tipId = await findRelevantGeneralRule(result.matchedItemName, ruleData);
+    
+    if (tipId) {
+        result.helpfulTip = GENERAL_RULES.find(r => r.id === tipId);
     }
   }
 

@@ -16,17 +16,17 @@ const AmbiguityCard: React.FC<AmbiguityCardProps> = ({ query, alternatives, onSe
   
   return (
     <div className="w-full max-w-md px-6 animate-fade-in-up">
-      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-8 text-center">
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200 p-8 text-center">
         
-        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <HelpCircle size={32} />
+        <div className="w-16 h-16 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto mb-6">
+          <HelpCircle size={32} strokeWidth={2.5} />
         </div>
 
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
+        <h2 className="text-2xl font-extrabold text-gray-950 mb-2">
           {t.ambiguousTitle[language]}
         </h2>
-        <p className="text-gray-500 mb-6">
-          {t.ambiguousDesc[language]} "<span className="font-semibold">{query}</span>". {t.pleaseClarify[language]}
+        <p className="text-gray-800 font-semibold mb-6 text-lg">
+          {t.ambiguousDesc[language]} "<span className="font-extrabold text-gray-950">{query}</span>". {t.pleaseClarify[language]}
         </p>
 
         <div className="space-y-3 mb-6">
@@ -34,7 +34,7 @@ const AmbiguityCard: React.FC<AmbiguityCardProps> = ({ query, alternatives, onSe
             <button
               key={option}
               onClick={() => onSelectAlternative(option)}
-              className="w-full py-3 px-4 bg-gray-50 hover:bg-eco-primary hover:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 border border-gray-100 capitalize"
+              className="w-full py-4 px-4 bg-gray-50 hover:bg-eco-primary hover:text-white text-gray-900 font-bold rounded-xl transition-all duration-200 border border-gray-300 capitalize text-lg"
             >
               {option}
             </button>
@@ -43,7 +43,7 @@ const AmbiguityCard: React.FC<AmbiguityCardProps> = ({ query, alternatives, onSe
 
         <button
           onClick={onReset}
-          className="text-sm text-gray-400 hover:text-eco-slate underline"
+          className="text-base text-gray-700 font-bold hover:text-eco-slate underline py-2"
         >
           {t.cancel[language]}
         </button>
